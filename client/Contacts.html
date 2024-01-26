@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <title>Bootstrap Homepage</title>
+</head>
+<body>
+  <!-- Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="index.html">Home</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav">
+        <li class="nav-item active">
+          <a class="nav-link" href="Clients.html">Client</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="Contact.html">Contact</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+    <div class="container mt-5">
+      <h2>Contacts Data Table</h2>
+  
+      <!-- Table to display client data -->
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Surname</th>
+            <th scope="col">Email</th>
+            <th scope="col">No_of_linked_contacts</th>
+          </tr>
+        </thead>
+        <tbody id="contactTableBody">
+          <!-- Client data will be dynamically added here using JavaScript -->
+        </tbody>
+      </table>
+    </div>
+  
+    <!-- Bootstrap JS and Popper.js (required for table sorting) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  
+    <script>
+      // Fetch data from the server and populate the table
+      fetch('http://localhost:3000/contacts') // Assuming this endpoint returns an array of client objects
+        .then(response => response.json())
+        .then(data => {
+          const tableBody = document.getElementById('contactTableBody');
+  
+          // Loop through the data and create table rows
+          data.forEach(contact => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${contact.name}</td>
+              <td>${contact.surname}</td>
+              <td>${contact.email}</td>
+              <td>${contact.no_of_linked_clients}</td>
+            `;
+            tableBody.appendChild(row);
+          });
+        })
+        .catch(error => {
+          console.error('Error fetching data:', error);
+        });
+    </script>
+  
+  </body>
+</html>

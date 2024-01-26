@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <title>Bootstrap Homepage</title>
+</head>
+
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="index.html">Home</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+      aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav">
+        <li class="nav-item active">
+          <a class="nav-link" href="Clients.html">Client</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="Contacts.html">Contact</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container mt-5">
+    <h2>Add New Client</h2>
+
+    <!-- Tabs navigation -->
+    <ul class="nav nav-tabs" id="clientTabs">
+      <li class="nav-item">
+        <a class="nav-link active" id="general-tab" data-toggle="tab" href="#general">General</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" id="linking-tab" data-toggle="tab" href="#linking">Linking</a>
+      </li>
+    </ul>
+
+    <!-- Tabs content -->
+    <div class="tab-content mt-2">
+      <div class="tab-pane fade show active" id="general">
+        <!-- General tab content -->
+        <form id="clientForm">
+          <div class="form-group">
+            <label for="clientName">Name</label>
+            <input type="text" class="form-control" id="clientName" placeholder="Enter client name" required>
+          </div>
+
+          <div class="form-group">
+            <label for="clientCode">Client Code</label>
+            <input type="text" class="form-control" id="clientCode" placeholder="Enter client code" required readonly>
+          </div>
+
+          <button type="button" class="btn btn-primary" onclick="saveClient()">Save Client</button>
+
+          <div id="successMessage" class="mt-3 text-success" style="display: none;"></div>
+          <div id="errorMessage" class="mt-3 text-danger" style="display: none;"></div>
+        </form>
+      </div>
+
+      <div class="tab-pane fade" id="linking">
+        <!-- Linking tab content -->
+        <h3>Link Contacts</h3>
+        <div class="form-group">
+          <label for="contactEmail">Select Contact by Email</label>
+          <select class="form-control" id="contactSelect">
+            <!-- Options will be dynamically populated using JavaScript -->
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="clientSelect">Select Client(s) by ID</label>
+          <select multiple class="form-control" id="clientSelect">
+            <!-- Options will be dynamically populated using JavaScript -->
+          </select>
+        </div>
+
+        <button type="button" class="btn btn-primary" onclick="linkContactToClient()">Link Contact</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS and Popper.js (required for tabs and form validation) -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+  <script>
+
+
+async function fetchAndPopulateContacts() {
+  try {
+    const responseContacts = await fetch('http://localhost:3000/contacts');
+    const contacts = await responseContacts.json();
+    const contactSelect = document.getElementById('contactSelect');
+
+    // Clear existing options
+    contactSelect.innerHTML = '';
+
+    // Add default option
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.text = 'Select a contact';
+    contactSelect.appendChild(defaultOption);
+
+    // Add contacts as options
+    contacts.forEach(contact => {
+      const option = document.createElement('option');
+      option.value = contact.email;
+      option.text = contact.email;
+      contactSelect.appendChild(option);
+    });
+  } catch (error) {
+    console.error('Error fetching contacts:', error);
+    alert('Error fetching contacts. Please check the console for details.');
+  }
+}
+
+// Function to populate client dropdown based on the selected contact and linked clients
+async function fetchAndPopulateUnlinkedClients() {
+  try {
+    const contactSelect = document.getElementById('contactSelect');
+    const selectedContactEmail = contactSelect.value;
+
+    if (!selectedContactEmail) {
+      // Handle the case when no contact is selected
+      return;
+    }
+
+    // Fetch all links
+    const linkResponse = await fetch('http://localhost:3000/get-links');
+    const links = await linkResponse.json();
+
+    // Fetch all clients
+    const responseClients = await fetch('http://localhost:3000/clients');
+    const clients = await responseClients.json();
+
+    // Log client codes from links for debugging
+ 
+
+    // Create a Set of unique client codes based on links
+    const linkedClientsSet = new Set(
+      links.filter(link => link.email.email && link.email.email === selectedContactEmail)
+        .map(link => link.clientCode.clientCode && link.clientCode.clientCode)
+    );
+
+    // Convert the Set back to an array of unique client codes
+    const linkedClientsArray = Array.from(linkedClientsSet);
+
+    console.log("Linked Clients array:", linkedClientsArray);
+
+    const clientSelect = document.getElementById('clientSelect');
+
+    // Clear existing options
+    clientSelect.innerHTML = '';
+
+    // Add clients as options only if they are not linked with the selected contact
+    clients.forEach(client => {
+      if (!linkedClientsArray.includes(client.clientCode)) {
+        const option = document.createElement('option');
+        option.value = client.clientCode;
+        option.text = client.clientCode;
+        clientSelect.appendChild(option);
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching clients:', error);
+    alert('Error fetching clients. Please check the console for details.');
+  }
+}
+
+// Add an event listener to the contactSelect dropdown
+const contactSelect = document.getElementById('contactSelect');
+contactSelect.addEventListener('change', fetchAndPopulateUnlinkedClients);
+
+// Call the function to fetch and populate contacts on page load
+fetchAndPopulateContacts();
+
+// Note: You may not need to call fetchAndPopulateUnlinkedClients on page load
+// if you want to populate the linked clients only when a contact is selected.
+
+async function linkContactToClient() {
+  try {
+    const selectedContactEmail = document.getElementById('contactSelect').value;
+    const selectedClientCodes = Array.from(document.getElementById('clientSelect').selectedOptions)
+      .map(option => option.value);
+
+    if (!selectedContactEmail || selectedClientCodes.length === 0) {
+      alert('Please select a contact and at least one client.');
+      return;
+    }
+
+    // Fetch all links
+    const linkResponse = await fetch('http://localhost:3000/get-links');
+    const links = await linkResponse.json();
+
+    // Check if the selected contact is already linked to any of the selected clients
+  
+console.log('Selected Contact Email:', selectedContactEmail);
+console.log('Selected Client Codes:', selectedClientCodes);
+
+    // Save the links
+    const saveLinkResponse = await fetch('http://localhost:3000/save-link', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: selectedContactEmail,
+        clientCodes: selectedClientCodes,
+      }),
+    });
+
+    const saveLinkResult = await saveLinkResponse.json();
+
+    if (saveLinkResponse.ok) {
+      alert('Link saved successfully.');
+    } else {
+      alert('Error saving link: ' + saveLinkResult.error);
+    }
+
+    // Refresh the dropdowns after saving links
+    fetchAndPopulateContacts();
+    fetchAndPopulateUnlinkedClients();
+  } catch (error) {
+    console.error('Error linking contact to client:', error);
+    alert('Error linking contact to client. Please check the console for details.');
+  }
+}
+
+
+var existingClientCodes = [];
+
+function generateClientCode(clientName, existingClientCodes) {
+  // Remove spaces and convert to uppercase
+  const cleanedName = clientName.replace(/\s/g, '').toUpperCase();
+
+  // If the client name is shorter than 3 characters, fill up with alpha characters
+  const alphaPart = cleanedName.length < 3 ? cleanedName + 'A'.repeat(3 - cleanedName.length) : cleanedName.slice(0, 3);
+
+  // Increment the numeric part until a unique value is found
+  let numericPart = 1;
+  let clientCode = alphaPart + padNumber(numericPart, 3); // Pad number to have at least 3 digits
+
+  // Check if the generated code is unique
+  while (isClientCodeExists(clientCode, existingClientCodes)) {
+    numericPart++;
+    clientCode = alphaPart + padNumber(numericPart, 3);
+  }
+
+  return clientCode;
+}
+
+// Function to pad a number with zeros
+function padNumber(number, length) {
+  return String(number).padStart(length, '0');
+}
+
+// Function to check if the client code already exists
+// Function to check if the client code already exists
+function isClientCodeExists(clientCode) {
+  return existingClientCodes.includes(clientCode);
+}
+
+async function fetchExistingClientCodes() {
+  try {
+    const response = await fetch('http://localhost:3000/get-existing-client-codes');
+    const existingClientCodes = await response.json();
+    return existingClientCodes;
+  } catch (error) {
+    console.error('Error fetching existing client codes:', error);
+    return [];
+  }
+}
+
+fetchExistingClientCodes()
+  .then((existingClientCodes=await.response.json) => { console.log('codes are:', existingClientCodes)})
+
+      function saveClient() {
+
+
+  fetch('http://localhost:3000/get-existing-client-codes')
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    return response.json();
+  })
+  .then(data => {
+    existingClientCodes = data;
+    console.log('Existing client codes:', existingClientCodes);
+      
+      const name = document.getElementById('clientName').value;
+
+      const clientCode = generateClientCode(name,existingClientCodes);
+      var no_of_linked_contacts= 0;
+        // Get form data
+        const contactData = {
+          name,
+          clientCode,
+          no_of_linked_contacts,
+        };
+
+        if (!name ) {
+        alert('Please fill in all fields.');
+        return;
+      }
+
+  
+
+        // Send data to the Node.js server
+        fetch('http://localhost:3000/save-client', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(contactData)
+        })
+          .then(response => response.json())
+          .then(data => {
+            console.log('Server response:', data);
+            document.getElementById('clientForm').reset();
+
+    const successMessage = document.getElementById('successMessage');
+    successMessage.textContent = 'Client added successfully!';
+    successMessage.style.display = 'block';
+    setTimeout(() => {
+  successMessage.style.display = 'none';
+}, 2000);
+            // You can handle the server response here
+          })
+          .catch(error => {
+            console.error('Error:', error);
+          })});
+      }
+    </script>
+  </body>
+
+
+</html>
+
+</html>
