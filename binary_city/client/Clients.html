@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <title>Bootstrap Homepage</title>
+
+  <style>
+    #noDataMessage {
+        display: none;
+        font-weight: bold;
+        color: red;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="index.html">Home</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav">
+        <li class="nav-item active">
+          <a class="nav-link" href="Clients.html">Client</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="Contacts.html">Contact</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container mt-5">
+    <h2>Client Data Table</h2>
+    <!-- Table to display client data -->
+    <table class="table" id="clientTable">
+      <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col">Client Code</th>
+          <th scope="col">No. of Linked Contacts</th>
+          <th scope="col">Links</th>
+        </tr>
+      </thead>
+      <tbody id="clientTableBody">
+        <!-- Client data will be dynamically added here using JavaScript -->
+      </tbody>
+    </table>
+    <div id="noDataMessage">No clients found.</div>
+    <button type="button" class="btn btn-primary" onclick="redirectToNewClientPage()">Create New Contact</button>
+  </div>
+
+  <!-- Bootstrap JS and Popper.js (required for table sorting) -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+  <script>
+    function redirectToNewClientPage() {
+      // Redirect to addNewclient.html
+      window.location.href = 'addNewclient.html';
+    }
+
+    function checkNoData() {
+      const tableBody = document.getElementById("clientTableBody");
+      const msg = document.getElementById("noDataMessage");
+      const tableHeaders = document.getElementById("clientTable").getElementsByTagName('thead')[0];
+      Console.log("WORKING!!!!!!"+tableBody +" " + tableHeaders+" "+ msg);
+
+      // Check if table body has rows
+      if (tableBody.children.length === 0) {
+        // Show message and hide headers if no rows
+        msg.style.display = "block";
+        tableHeaders.classList.add("d-none"); // Add the Bootstrap class to hide the headers
+      } else {
+        // Hide message and show headers if rows exist
+        msg.style.display = "none";
+        tableHeaders.classList.remove("d-none"); // Remove the Bootstrap class to show the headers
+      }
+    }
+
+
+    function fetchAndPopulateClientTable() {
+      fetch('http://localhost:3000/clients')
+        .then(response => response.json())
+        .then(data => {
+          const tableBody = document.getElementById('clientTableBody');
+          // Clear existing table rows
+          tableBody.innerHTML = '';
+
+          // Loop through the data and create table rows
+          data.forEach(client => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${client.name}</td>
+              <td>${client.clientCode}</td>
+              <td>${client.no_of_linked_contacts}</td>
+              <td>
+                ${client.no_of_linked_contacts > 0
+                  ? `<a href="#" class="links-button" onclick="displayLinksPopup('${client.clientCode}')">Links</a>`
+                  : ''
+                }
+              </td>
+            `;
+            tableBody.appendChild(row);
+          });
+
+          // Check for no data and display message if needed
+        })
+        .catch(error => {
+          console.error('Error fetching data:', error);
+        });
+    }
+
+    function redirectToNewClientPage() {
+    window.location.href = 'addNewclient.html';
+  }
+
+  function checkNoData() {
+    const tableBody = document.getElementById("clientTableBody");
+    const msg = document.getElementById("noDataMessage");
+
+    if (tableBody.querySelectorAll('tr').length === 0) {
+      msg.style.display = "block";
+    } else {
+      msg.style.display = "none";
+    }
+  }
+
+  function fetchAndPopulateClientTable() {
+    fetch('http://localhost:3000/clients')
+      .then(response => response.json())
+      .then(data => {
+        const tableBody = document.getElementById('clientTableBody');
+        tableBody.innerHTML = '';
+
+        data.forEach(client => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${client.name}</td>
+            <td>${client.clientCode}</td>
+            <td>${client.no_of_linked_contacts}</td>
+            <td>
+              ${client.no_of_linked_contacts > 0
+                ? `<a href="#" class="links-button" onclick="displayLinksPopup('${client.clientCode}')">Links</a>`
+                : ''
+              }
+            </td>
+          `;
+          tableBody.appendChild(row);
+        });
+
+        checkNoData();
+      })
+      .catch(error => {
+        console.error('Error fetching data:', error);
+      });
+  }
+
+  function displayLinksPopup(clientCode) {
+    fetch(`http://localhost:3000/get-linked-contacts/${clientCode}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data && data.linkedContacts) {
+          const modalContent = `
+            <div class="modal fade" id="linksPopup" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+              <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Linked Information</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                      <span aria-hidden="true">&times;</span>
+                    </button>
+                  </div>
+                  <div class="modal-body">
+                    <table class="table" id="modalTable">
+                      <thead>
+                        <tr>
+                          <th scope="col">Contact Full Name</th>
+                          <th scope="col">Contact Email</th>
+                          <th scope="col">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${data.linkedContacts.map(contact => `
+                          <tr>
+                            <td>${contact.surname} ${contact.name}</td>
+                            <td>${contact.email}</td>
+                            <td>
+                              <a href="#" onclick="unlinkContact('${clientCode}', '${contact.email}')">Unlink</a>
+                            </td>
+                          </tr>
+                        `).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="location.reload()">Close</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+
+          document.body.insertAdjacentHTML('beforeend', modalContent);
+          $('#linksPopup').modal('show');
+        } else {
+          console.error('Invalid data structure:', data);
+          alert('Error: Invalid data structure. Please check the console for details.');
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching linked information:', error);
+        alert('Error fetching linked information. Please check the console for details.');
+      });
+  }
+
+  function unlinkContact(clientCode, email) {
+    const confirmUnlink = confirm(`Are you sure you want to unlink client ${clientCode} with email contact: ${email}?`);
+
+    if (confirmUnlink) {
+      fetch('http://localhost:3000/delete-link', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          clientCode: clientCode,
+          email: email,
+        }),
+      })
+        .then(response => response.json())
+        .then(data => {
+          console.log(data.message);
+          refreshModalTable(clientCode);
+        })
+        .catch(error => {
+          console.error('Error unlinking contact:', error);
+          alert('Error unlinking contact. Please check the console for details.');
+        });
+    }
+  }
+
+  function refreshModalTable(clientCode) {
+    $('#linksPopup').modal('hide');
+    document.body.removeChild(document.getElementById('linksPopup'));
+    displayLinksPopup(clientCode);
+  }
+
+  function refreshClientTable() {
+    $('#linksPopup').modal('hide');
+    fetchAndPopulateClientTable();
+  }
+
+  // Fetch and populate the client table on page load
+  fetchAndPopulateClientTable();
+  checkNoData();
+
+  </script>
+</body>
+</html>

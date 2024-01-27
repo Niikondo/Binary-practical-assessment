@@ -161,6 +161,44 @@ app.delete('/delete-link', async (req, res) => {
   }
 });
 
+app.get('/get-linked-clients/:identifier', async (req, res) => {
+  try {
+    const { identifier } = req.params;
+
+    let links;
+    
+    if (mongoose.Types.ObjectId.isValid(identifier)) {
+      // If it's a valid ObjectId, assume it's a direct reference
+      links = await LinkModel.find({ email: identifier }).populate({
+        path: 'clientCode',
+        model: UserModel,
+      });
+    } else {
+      // If not a valid ObjectId, assume it's an email
+      const contact = await ContactsModel.findOne({ email: identifier });
+      
+      if (!contact) {
+        return res.status(404).json({ error: 'Contact not found' });
+      }
+
+      links = await LinkModel.find({ email: contact._id }).populate({
+        path: 'clientCode',
+        model: UserModel,
+      });
+    }
+
+    // Extract details for all linked clients
+    const linkedClients = links.map(link => {
+      const { name, clientCode } = link.clientCode;
+      return { name, clientCode };
+    });
+
+    res.status(200).json({ linkedClients });
+  } catch (error) {
+    console.error('Error fetching linked clients:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 
 app.get('/get-linked-contacts/:identifier', async (req, res) => {
@@ -464,5 +502,3 @@ function saveToJson(clientData) {
 app.listen(3000, () => {
   console.log('Server is running on port 3000');
 });
-
-
